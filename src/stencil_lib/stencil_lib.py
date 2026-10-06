@@ -27,8 +27,8 @@ Usage:
 import math
 import numpy as np
 import imageio
-
-
+import io
+# needed for show method 
 PHI = (1 + math.sqrt(5)) / 2
 
 
@@ -301,45 +301,52 @@ class Stencil:
             rgb_img = self.composite_on()
             imageio.imwrite(path, rgb_img)
 
-
     def show(self, composite=True):
-        """Display the image in JupyterLite or create a new document in Krita."""
-        # 1. Prepare the image data
+        """The 'Nuclear Option' for JupyterLite: Converts array to PNG bytes."""
         img_data = self.composite_on() if composite else self.img
         
-        # Krita and PIL both expect uint8 (0-255)
+        # 1. Standardize the array (Essential for any method)
         if img_data.dtype != np.uint8:
-            img_data = (img_data * 255).astype(np.uint8) if img_data.max() <= 1.0 else img_data.astype(np.uint8)
+            img_data = (img_data * 255).clip(0, 255).astype(np.uint8) if img_data.max() <= 1.01 else img_data.clip(0, 255).astype(np.uint8)
+        
+        if img_data.ndim == 3 and img_data.shape[0] in [3, 4]:
+            img_data = img_data.transpose(1, 2, 0)
 
-        # 2. Try Krita integration first (if running in Krita Scripter)
+        # 2. Krita Integration (Kept as is)
         try:
             import krita
-            # Create a new document with the image dimensions
-            height, width = img_data.shape[:2]
-            # "RGBA" and "U8" (8-bit unsigned) are standard for most NumPy image arrays
-            doc = krita.Krita.instance().createDocument(width, height, "AI Render", "RGBA", "U8", "")
-            layer = doc.createLayer("Result", "paint")
-            doc.rootNode().addChildNode(layer, None)
-            
-            # Push the raw bytes of the NumPy array into the layer
-            layer.setPixelData(img_data.tobytes(), 0, 0, width, height)
-            
-            # Make the new document the active window
-            krita.Krita.instance().activeWindow().setActiveImage(doc)
-            return # Exit if Krita render was successful
+            if krita.Krita.instance() is not None:
+                height, width = img_data.shape[:2]
+                doc = krita.Krita.instance().createDocument(width, height, "AI Render", "RGBA", "U8", "")
+                layer = doc.createLayer("Result", "paint")
+                doc.rootNode().addChildNode(layer, None)
+                layer.setPixelData(img_data.tobytes(), 0, 0, width, height)
+                krita.Krita.instance().activeWindow().setActiveImage(doc)
+                return
         except (ImportError, AttributeError):
-            pass # Not in Krita or Krita API failed, try Jupyter
+            pass
 
-        # 3. Try Jupyter/IPython integration
+        # 3. The Robust JupyterLite Method: Array -> PNG Bytes -> Browser
         try:
-            from IPython.display import display
-            from PIL import Image
-            display(Image.fromarray(img_data))
+            from IPython.display import display, Image as IPythonImage
+            from PIL import Image as PILImage
+            
+            # Convert NumPy array to PIL Image
+            pil_img = PILImage.fromarray(img_data)
+            
+            # Save the PIL Image to a memory buffer as a PNG
+            buf = io.BytesIO()
+            pil_img.save(buf, format='PNG')
+            byte_im = buf.getvalue()
+            
+            # Display the raw bytes. This is the most compatible way for web-browsers.
+            display(IPythonImage(data=byte_im))
             return
         except ImportError:
             pass
 
-        print("Error: No supported display environment found (Krita or IPython).")
+        print("Error: Could not render image in this environment.")
+
 
 if __name__ == "__main__":
     demos = [
