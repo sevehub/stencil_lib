@@ -302,6 +302,45 @@ class Stencil:
             imageio.imwrite(path, rgb_img)
 
 
+    def show(self, composite=True):
+        """Display the image in JupyterLite or create a new document in Krita."""
+        # 1. Prepare the image data
+        img_data = self.composite_on() if composite else self.img
+        
+        # Krita and PIL both expect uint8 (0-255)
+        if img_data.dtype != np.uint8:
+            img_data = (img_data * 255).astype(np.uint8) if img_data.max() <= 1.0 else img_data.astype(np.uint8)
+
+        # 2. Try Krita integration first (if running in Krita Scripter)
+        try:
+            import krita
+            # Create a new document with the image dimensions
+            height, width = img_data.shape[:2]
+            # "RGBA" and "U8" (8-bit unsigned) are standard for most NumPy image arrays
+            doc = krita.Krita.instance().createDocument(width, height, "AI Render", "RGBA", "U8", "")
+            layer = doc.createLayer("Result", "paint")
+            doc.rootNode().addChildNode(layer, None)
+            
+            # Push the raw bytes of the NumPy array into the layer
+            layer.setPixelData(img_data.tobytes(), 0, 0, width, height)
+            
+            # Make the new document the active window
+            krita.Krita.instance().activeWindow().setActiveImage(doc)
+            return # Exit if Krita render was successful
+        except (ImportError, AttributeError):
+            pass # Not in Krita or Krita API failed, try Jupyter
+
+        # 3. Try Jupyter/IPython integration
+        try:
+            from IPython.display import display
+            from PIL import Image
+            display(Image.fromarray(img_data))
+            return
+        except ImportError:
+            pass
+
+        print("Error: No supported display environment found (Krita or IPython).")
+
 if __name__ == "__main__":
     demos = [
         ("ellipse", dict(a_cm=3.8, b_cm=2.2)),
