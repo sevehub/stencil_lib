@@ -300,6 +300,10 @@ class Stencil:
         else:
             rgb_img = self.composite_on()
             imageio.imwrite(path, rgb_img)
+    
+    def version(self):
+        incr = "0.1.1"
+        print(f"Version {incr}")
 
     def show(self, composite=True):
         """The 'Nuclear Option' for JupyterLite: Converts array to PNG bytes."""
@@ -332,7 +336,7 @@ class Stencil:
             from PIL import Image as PILImage
             
             # Convert NumPy array to PIL Image
-            pil_img = PILImage.fromarray(img_data)
+            pil_img = PILImage.fromarray(self.img) # (img_data)
             
             # Save the PIL Image to a memory buffer as a PNG
             buf = io.BytesIO()
@@ -341,6 +345,8 @@ class Stencil:
             
             # Display the raw bytes. This is the most compatible way for web-browsers.
             display(IPythonImage(data=byte_im))
+            print("testing .....")
+            display(byte_im)
             return
         except ImportError:
             pass
