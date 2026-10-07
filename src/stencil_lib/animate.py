@@ -1,6 +1,7 @@
 import io
 import zipfile
-from .stencil_lib import Stencil  
+import imageio
+from .stencil_lib import Stencil
 
 
 def animate(curve_name, param_name, values, width_cm, height_cm=None, dpi=300,
@@ -15,8 +16,9 @@ def animate(curve_name, param_name, values, width_cm, height_cm=None, dpi=300,
             kwargs = dict(fixed_kwargs)
             kwargs[param_name] = val
             s.add_curve(curve_name, stroke=stroke, **kwargs)
+
             frame_buf = io.BytesIO()
-            s.img.save(frame_buf, format="PNG")
+            imageio.imwrite(frame_buf, s.img, format="png")   # <- changed
             zf.writestr(frame_name_fmt.format(index=i), frame_buf.getvalue())
     with open(zip_path, "wb") as f:
         f.write(buffer.getvalue())
