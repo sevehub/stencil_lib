@@ -1,4 +1,3 @@
-
 """
 stencil_lib.py — Generic parametric stencil generator.
 
@@ -203,14 +202,22 @@ class Stencil:
             self.img[:, self.W - 1 - i] = stroke_array
 
     def add_parametric(self, x_func, y_func, t0, t1, steps=720, closed=False,
-                        stroke=(255, 255, 255, 255), width_px=3):
+                        stroke=(255, 255, 255, 255), width_px=3, rotation_deg=0):
+        rot = math.radians(rotation_deg)
+        cos_r, sin_r = math.cos(rot), math.sin(rot)
         ts = _linspace(t0, t1, steps)
-        pts = [self._to_px(x_func(t), y_func(t)) for t in ts]
+        pts = []
+        for t in ts:
+            x, y = x_func(t), y_func(t)
+            xr = x * cos_r - y * sin_r
+            yr = x * sin_r + y * cos_r
+            pts.append(self._to_px(xr, yr))
         if closed:
             pts.append(pts[0])
         self._draw_line(pts, stroke=stroke, width_px=width_px)
 
-    def add_curve(self, name, steps=720, stroke=(255, 255, 255, 255), width_px=3, **kwargs):
+    def add_curve(self, name, steps=720, stroke=(255, 255, 255, 255), width_px=3,
+                  rotation_deg=0, **kwargs):
         if name not in _REGISTRY:
             raise ValueError(f"Unknown curve '{name}'. Options: {list(_REGISTRY)}")
         rx_cm = self.width_cm / 2 - self.margin_cm
@@ -221,7 +228,7 @@ class Stencil:
             sides = result[5]
             steps = sides + 1  # straight edges only need vertices
         self.add_parametric(x_func, y_func, t0, t1, steps=steps, closed=closed,
-                             stroke=stroke, width_px=width_px)
+                             stroke=stroke, width_px=width_px, rotation_deg=rotation_deg)
 
     def add_golden_grid_spiral(self, stroke=(255, 255, 255, 255), width_px=3,
                                 show_grid=True, min_square_px=8):
@@ -369,3 +376,7 @@ if __name__ == "__main__":
         thumb_rgb = s.composite_on((45, 45, 45))
         # Resize using imageio (simplified: downsampling by slicing)
         thumb = thumb_rgb[::2, ::2]  # Simple 2x downsam
+
+
+
+
