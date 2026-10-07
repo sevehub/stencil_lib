@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "stencil_lib"
-version = "0.1.0"
+dynamic = ["version"]
 description = """Generic parametric stencil generator for Python. 
 Renders print-accurate transparent PNGs from real-world dimensions (cm/DPI) — ellipses (Trammel of Archimedes  ), Archimedean and golden spirals, spirographs, rose curves, and polygons. One engine, pluggable curve registry. 
 Built for AR overlays ."""
@@ -17,3 +17,6 @@ dependencies = [
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.dynamic]
+version = {attr = "stencil_lib.__version__"}

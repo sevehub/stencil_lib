@@ -300,13 +300,9 @@ class Stencil:
         else:
             rgb_img = self.composite_on()
             imageio.imwrite(path, rgb_img)
-    
-    def version(self):
-        incr = "0.1.1"
-        print(f"Version {incr}")
 
     def show(self, composite=True):
-        """The 'Nuclear Option' for JupyterLite: Converts array to PNG bytes."""
+        """Converts array to PNG bytes."""
         img_data = self.composite_on() if composite else self.img
         
         # 1. Standardize the array (Essential for any method)
@@ -345,8 +341,6 @@ class Stencil:
             
             # Display the raw bytes. This is the most compatible way for web-browsers.
             display(IPythonImage(data=byte_im))
-            print("testing .....")
-            display(byte_im)
             return
         except ImportError:
             pass
